@@ -1,9 +1,13 @@
 CREATE TABLE search_reranking_feedback (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,	
     "search_id" INTEGER NOT NULL,
+    "old_rank" INTEGER NOT NULL,
+    "new_rank" INTEGER NOT NULL,
     "result_url" VARCHAR(255) NOT NULL,
     "result_title" VARCHAR(255) NOT NULL,
     "feedback" INTEGER NOT NULL,
+    "feedbacks_used" INTEGER NOT NULL,
+    "metadatas_used" INTEGER NOT NULL,
     FOREIGN KEY ("search_id")
         REFERENCES search ("id")
     );
