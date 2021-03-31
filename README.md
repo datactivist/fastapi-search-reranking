@@ -35,4 +35,4 @@ bash ./start_service.sh
 
 ## API Documentation
 
-Une fois le service lancé (localement), une documentation intéractible est disponible à cette adresse: http://127.0.0.1/docs#/
+Une fois le service lancé, une documentation intéractible est disponible à cette adresse: http://127.0.0.1:8001/docs#/

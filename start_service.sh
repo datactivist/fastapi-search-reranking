@@ -5,16 +5,18 @@ Help()
    # Display Help
    echo "Start reranking API service using api-config.config configuration."
    echo
-   echo "Syntax: start_service.sh [-d|-s|-h]"
+   echo "Syntax: start_service.sh [-d|-s|-r|-h]"
    echo "options:"
    echo "d     Run the docker image on a container with the same name"
    echo "s     Run the docker image in silent mode (when using -d option)"
+   echo "r     Run the API in reload mode (development)"
    echo "h     Show this help panel"
    echo
 }
 
 flag_start_docker=false
 flag_silence_docker=false
+flag_reload=false
 
 while [ -n "$1" ]; do # while loop starts
 
@@ -23,6 +25,8 @@ while [ -n "$1" ]; do # while loop starts
     -d) flag_start_docker=true ;;
 
 	-s) flag_silence_docker=true ;;
+
+    -r) flag_reload=true ;;
 
     -h) Help 
         exit;;
@@ -40,10 +44,12 @@ done
 start_docker()
 {
     if $flag_start_docker; then
+        sudo docker stop $docker_name
+        sudo docker rm $docker_name
         if $flag_silence_docker; then
-            echo "silent mode"
+            sudo docker run -d --name $docker_name -h $API_host_name -p $API_port:80 $docker_name:$docker_version
         else
-            echo "starting docker"
+            sudo docker run --name $docker_name -h $API_host_name -p $API_port:80 $docker_name:$docker_version
         fi
     else
         echo "Not starting docker"
@@ -54,7 +60,13 @@ start_docker()
 start_local_mode()
 {
     cd app
-    uvicorn main:app
+
+    if $flag_reload; then
+        uvicorn main:app --host $API_host_name --port $API_port --reload
+    else
+        uvicorn main:app --host $API_host_name --port $API_port
+    fi
+
 }
 
 if [ $deployment_method == "local" ]; then
