@@ -35,10 +35,31 @@ class Feedback(int, Enum):
     unknown = 0
 
 
+class Group(BaseModel):
+
+    name: str
+    description: Optional[str]
+
+
+class Result(BaseModel):
+
+    title: str
+    url: str
+    description: str
+    owner_org: Optional[str]
+    owner_org_description: Optional[str]
+    maintainer: Optional[str]
+    dataset_publication_date: Optional[str]
+    dataset_modification_date: Optional[str]
+    metadata_creation_date: Optional[str]
+    metadata_modification_date: Optional[str]
+    tags: Optional[List[str]]
+    groups: Optional[List[Group]]
+
+
 class Result_Feedback(BaseModel):
 
-    result_url: str
-    result_title: str
+    result: Result
     feedback: Feedback
 
 
@@ -46,32 +67,44 @@ class Add_Result_Feedback_Query(BaseModel):
 
     conversation_id: str
     user_search: str
-    data: List[Result_Feedback]
+    feedbacks_list: List[Result_Feedback]
 
     class Config:
         schema_extra = {
             "example": {
                 "conversation_id": "51ad8b6a-6924-4c79-a22b-de013e5fe25e",
                 "user_search": "barrage électrique",
-                "data": [
+                "feedbacks_list": [
                     {
-                        "result_url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
-                        "result_title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
+                        "result": {
+                            "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
+                            "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
+                            "description": "Description 1",
+                        },
                         "feedback": 1,
                     },
                     {
-                        "result_url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
-                        "result_title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
+                        "result": {
+                            "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
+                            "url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
+                            "description": "Description 2",
+                        },
                         "feedback": -1,
                     },
                     {
-                        "result_url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
-                        "result_title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
+                        "result": {
+                            "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
+                            "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
+                            "description": "Description 3",
+                        },
                         "feedback": -1,
                     },
                     {
-                        "result_url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
-                        "result_title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
+                        "result": {
+                            "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
+                            "url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
+                            "description": "Description 4",
+                        },
                         "feedback": 1,
                     },
                 ],
@@ -82,12 +115,6 @@ class Add_Result_Feedback_Query(BaseModel):
 class API_Hostname(str, Enum):
     datasud = "DataSud"
     others = "Other"
-
-
-class Result(BaseModel):
-
-    result_url: str
-    result_title: str
 
 
 class Results_List(BaseModel):
@@ -118,20 +145,24 @@ class Search_Reranking_Query(BaseModel):
                         "api_hostname": "DataSud",
                         "results_list": [
                             {
-                                "result_url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
-                                "result_title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
+                                "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
+                                "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
+                                "description": "Description 1",
                             },
                             {
-                                "result_url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
-                                "result_title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
+                                "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
+                                "url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
+                                "description": "Description 2",
                             },
                             {
-                                "result_url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
-                                "result_title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
+                                "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
+                                "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
+                                "description": "Description 3",
                             },
                             {
-                                "result_url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
-                                "result_title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
+                                "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
+                                "url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
+                                "description": "Description 4",
                             },
                         ],
                     }
@@ -150,17 +181,31 @@ async def manage_query_reranking(query: Search_Reranking_Query):
     """
     ## Function
     Take the results of one or multiple searches and rerank the results
+    
     ### Required parameters
     - **conversation_id**: rasa id of the conversation
     - **user_search**: search of the user
     - **data**: list of results_list
-        - **api_hostname**: hostname from which the results have been gathered
-        - **results_list**: list of result
-            - result_url: url of the result
-            - result_title: title of the result
+    - A **result list** is comprised of the API hostname from which the results have been gathered, and the list of results
+    - A **result** has 3 required attributes:
+        - **title**: title of the result
+        - **url**: url of the result
+        - **description**: description of the result
+    - A **result** can have these optional attributes, defaulted to empty:
+        - **owner_org**: organization that created the datased
+        - **owner_org_description**: a description of that organization
+        - **maintainer**: organization maintaining the dataset
+        - **dataset_publication_date**: date of publication of the dataset
+        - **dataset_modification_date**: date of last modification of the dataset
+        - **metadata_creation_date**: date of creation of the metadatas
+        - **metadata_modification_date**: date of last modification of the metadatas
+        - **tags**: list of strings for each tag
+        - **groups**: list of group
+            - A **group** must have a **name** attribute as string, and optionally a **description**
+    
     ### Optional parameters
-    - use_feedback: if True, use feedback for reranking, default to True
-    - use_metadata: if True, do nothing for now, default to False
+    - **use_feedback**: if True, use feedback for reranking, default to True
+    - **use_metadata**: if True, do nothing for now, default to False
     """
 
     output_data = reranking.rerank_results(
@@ -199,18 +244,28 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
     ## Parameter
     ### Required
     - **user_search**: Search of the user
-    - **data**: List of results for that search and their feedback
-        - **result_url**: url of the result
-        - **result_title**: title of the result
-        - **feedback**: Feedback of the user
+    - **feedbacks_list**: List of results_feedback
+    - A **results_feedback** has two attributes:
+        - **feedback**: Feedback of the user with value -1, 0, or 1
+        - A **result** with 3 required attributes:
+            - **title**: title of the result
+            - **url**: url of the result
+            - **description**: description of the result
+        - A **result** can have these optional attributes, defaulted to empty:
+            - **owner_org**: organization that created the datased
+            - **owner_org_description**: a description of that organization
+            - **maintainer**: organization maintaining the dataset
+            - **dataset_publication_date**: date of publication of the dataset
+            - **dataset_modification_date**: date of last modification of the dataset
+            - **metadata_creationfeedback.result_url,
+            feedback.result_title,_date**: date of creation of the metadatas
+            - **metadata_modification_date**: date of last modification of the metadatas
+            - **tags**: list of strings for each tag
+            - **groups**: list of group
+                - A **group** must have a **name** attribute as string, and optionally a **description**
     """
 
-    for feedback in feedbacks.data:
-        sqlQuery.update_proposed_result_feedback(
-            feedbacks.conversation_id,
-            feedbacks.user_search,
-            feedback.result_url,
-            feedback.result_title,
-            feedback.feedback,
-        )
+    sqlQuery.update_proposed_result_feedback(
+        feedbacks.conversation_id, feedbacks.user_search, feedbacks.feedbacks_list
+    )
 

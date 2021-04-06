@@ -41,24 +41,24 @@ def compute_feedback_score(conversation_id, user_search, result):
             user_search: keyword entered by the user
             result: proposed result to the user
 
-    Output: Feedback score, default value to -1 if no feedbacks available
+    Output: Feedback score, default value to 0 if no feedbacks available
     """
 
     # get feedback for that particular search_id -> result_url sequence (TODO: check for similar search?)
 
-    feedbacks = sqlQuery.get_feedback_for_reranking(user_search, result.result_url)
+    feedbacks = sqlQuery.get_feedback_for_reranking(user_search, result)
 
-    if len(feedbacks) > 0:
+    if feedbacks != None and len(feedbacks) > 0:
         # Normalize mean of all feedbacks (-1->1 to 0->1)
         feedback_score = (np.mean(feedbacks) - (-1)) / (1 - (-1))
     else:
         # Default value if no feedbacks available
-        feedback_score = -1
+        feedback_score = 0
 
     return feedback_score
 
 
-def use_feedback_reranking(conversation_id, user_search, results_list):
+def add_feedback_score_to_results(conversation_id, user_search, results_list):
 
     """
     Get feedback score for each result in result_list
@@ -76,7 +76,7 @@ def use_feedback_reranking(conversation_id, user_search, results_list):
 
         feedback_score = compute_feedback_score(conversation_id, user_search, result)
 
-        print(feedback_score, result.result_title)
+        print(feedback_score, result.title)
 
         new_list.append((result, feedback_score))
 
@@ -86,6 +86,12 @@ def use_feedback_reranking(conversation_id, user_search, results_list):
 def add_reranking_to_db(
     conversation_id, user_search, data, final_data, flag_feedback, flag_metadata
 ):
+
+    methods_used = ""
+    if flag_feedback:
+        methods_used += "feedback"
+    if flag_metadata:
+        methods_used += " metadata"
 
     for i, result in enumerate(final_data):
 
@@ -100,13 +106,11 @@ def add_reranking_to_db(
         sqlQuery.add_proposed_result(
             conversation_id=conversation_id,
             search=user_search,
-            result_url=result.result_url,
-            result_title=result.result_title,
+            result=result,
             feedback=0,
             old_rank=old_rank,
             new_rank=i,
-            flag_feedback=flag_feedback,
-            flag_metadata=flag_metadata,
+            methods_used=methods_used,
         )
 
 
@@ -127,7 +131,7 @@ def rerank_results(conversation_id, user_search, data, use_feedback, use_metadat
                 result_list.api_hostname == "DataSud"
             ):  # TODO Gérer plusieurs listes de résultats en entrée
 
-                feedback_data = use_feedback_reranking(
+                feedback_data = add_feedback_score_to_results(
                     conversation_id, user_search, result_list.results_list
                 )
                 feedback_data = sort_array_of_tuple_with_second_value(feedback_data)
