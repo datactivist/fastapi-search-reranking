@@ -148,6 +148,17 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
                                 "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
                                 "description": "Description 1",
+                                "tags": ["tag1", "tag2", "tag3"],
+                                "groups": [
+                                    {
+                                        "name": "group1",
+                                        "description": "group_description1",
+                                    },
+                                    {
+                                        "name": "group2",
+                                        "description": "group_description2",
+                                    },
+                                ],
                             },
                             {
                                 "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
@@ -158,6 +169,7 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
                                 "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
                                 "description": "Description 3",
+                                "tags": ["tag1", "tag3", "tag4"],
                             },
                             {
                                 "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
