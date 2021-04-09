@@ -34,11 +34,12 @@ def run_sql_command(cursor, sql_command, data):
 
     except sqlite3.Error as error:
 
-        for param in data:
-            if type(param) == str:
-                sql_command = sql_command.replace("?", '"' + str(param) + '"', 1)
-            else:
-                sql_command = sql_command.replace("?", str(param), 1)
+        if data is not None:
+            for param in data:
+                if type(param) == str:
+                    sql_command = sql_command.replace("?", '"' + str(param) + '"', 1)
+                else:
+                    sql_command = sql_command.replace("?", str(param), 1)
 
         print(
             "\nError while running this command: \n",
@@ -477,7 +478,7 @@ def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
 
                 if result_id is None:
 
-                    result_id = add_new_result_to_DB(cursor, result)
+                    result_id = add_new_result_to_DB(cursor, fback.result)
 
                 else:
 

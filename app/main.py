@@ -113,7 +113,7 @@ class Add_Result_Feedback_Query(BaseModel):
 
 
 class API_Hostname(str, Enum):
-    datasud = "DataSud"
+    datasud = "datasud"
     others = "Other"
 
 
@@ -142,7 +142,7 @@ class Search_Reranking_Query(BaseModel):
                 "user_search": "barrage électrique",
                 "data": [
                     {
-                        "api_hostname": "DataSud",
+                        "api_hostname": "datasud",
                         "results_list": [
                             {
                                 "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
@@ -269,8 +269,7 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
             - **maintainer**: organization maintaining the dataset
             - **dataset_publication_date**: date of publication of the dataset
             - **dataset_modification_date**: date of last modification of the dataset
-            - **metadata_creationfeedback.result_url,
-            feedback.result_title,_date**: date of creation of the metadatas
+            - **metadata_creation_date**: date of creation of the metadatas
             - **metadata_modification_date**: date of last modification of the metadatas
             - **tags**: list of strings for each tag
             - **groups**: list of group
