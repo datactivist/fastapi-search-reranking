@@ -4,7 +4,7 @@ import numpy as np
 from enum import Enum
 
 import reranking
-import sqlQuery
+import sql_query
 
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field
@@ -243,7 +243,7 @@ async def add_search(search: Add_Search_Query):
     - **date**: date of the search [yy-mm-dd hh:mm:ss]
     """
 
-    sqlQuery.add_new_search_query(
+    sql_query.add_new_search_query(
         search.conversation_id, search.user_search, search.date
     )
 
@@ -276,7 +276,7 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
                 - A **group** must have a **name** attribute as string, and optionally a **description**
     """
 
-    sqlQuery.update_proposed_result_feedback(
+    sql_query.update_proposed_result_feedback(
         feedbacks.conversation_id, feedbacks.user_search, feedbacks.feedbacks_list
     )
 
