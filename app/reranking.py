@@ -128,7 +128,7 @@ def rerank_results(conversation_id, user_search, data, use_feedback, use_metadat
         for result_list in data:
 
             if (
-                result_list.api_hostname == "DataSud"
+                result_list.api_hostname == "datasud"
             ):  # TODO Gérer plusieurs listes de résultats en entrée
 
                 feedback_data = add_feedback_score_to_results(

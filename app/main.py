@@ -113,7 +113,7 @@ class Add_Result_Feedback_Query(BaseModel):
 
 
 class API_Hostname(str, Enum):
-    datasud = "DataSud"
+    datasud = "datasud"
     others = "Other"
 
 
@@ -142,12 +142,23 @@ class Search_Reranking_Query(BaseModel):
                 "user_search": "barrage électrique",
                 "data": [
                     {
-                        "api_hostname": "DataSud",
+                        "api_hostname": "datasud",
                         "results_list": [
                             {
                                 "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
                                 "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
                                 "description": "Description 1",
+                                "tags": ["tag1", "tag2", "tag3"],
+                                "groups": [
+                                    {
+                                        "name": "group1",
+                                        "description": "group_description1",
+                                    },
+                                    {
+                                        "name": "group2",
+                                        "description": "group_description2",
+                                    },
+                                ],
                             },
                             {
                                 "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
@@ -158,6 +169,7 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
                                 "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
                                 "description": "Description 3",
+                                "tags": ["tag1", "tag3", "tag4"],
                             },
                             {
                                 "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
@@ -257,8 +269,7 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
             - **maintainer**: organization maintaining the dataset
             - **dataset_publication_date**: date of publication of the dataset
             - **dataset_modification_date**: date of last modification of the dataset
-            - **metadata_creationfeedback.result_url,
-            feedback.result_title,_date**: date of creation of the metadatas
+            - **metadata_creation_date**: date of creation of the metadatas
             - **metadata_modification_date**: date of last modification of the metadatas
             - **tags**: list of strings for each tag
             - **groups**: list of group

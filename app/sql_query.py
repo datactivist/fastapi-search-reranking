@@ -34,11 +34,12 @@ def run_sql_command(cursor, sql_command, data):
 
     except sqlite3.Error as error:
 
-        for param in data:
-            if type(param) == str:
-                sql_command = sql_command.replace("?", '"' + str(param) + '"', 1)
-            else:
-                sql_command = sql_command.replace("?", str(param), 1)
+        if data is not None:
+            for param in data:
+                if type(param) == str:
+                    sql_command = sql_command.replace("?", '"' + str(param) + '"', 1)
+                else:
+                    sql_command = sql_command.replace("?", str(param), 1)
 
         print(
             "\nError while running this command: \n",
@@ -52,28 +53,183 @@ def run_sql_command(cursor, sql_command, data):
         return None
 
 
-def get_tags_id(cursor, tags):
+def add_new_tag(cursor, tag):
+
+    """
+    Add a new tag to the table result_tag
+
+    Input:  cursor: connection to database
+            tag: string
+
+    Output: return newly created tag's id
+    """
+
+    sqlite_add_tag_query = "INSERT INTO result_tag(name) VALUES (?);"
+
+    run_sql_command(cursor, sqlite_add_tag_query, [tag])
+    return get_tag_id(cursor, tag)
+
+
+def get_tag_id(cursor, tag):
 
     """
     Input:  cursor: connection to database
-            tags: list of string
+            tag: string
 
-    Output: list of ID of each tag from database
+    Output: return db ID of the tag in input
+            return None if tag not found
     """
 
+    sqlite_get_tag_id_query = "SELECT id FROM result_tag WHERE name = ?;"
+
+    tag_id = run_sql_command(cursor, sqlite_get_tag_id_query, [tag])
+
+    if tag_id is not None and len(tag_id) > 0:
+        return tag_id[0][0]
     return None
 
 
-def get_groups_id(cursor, groups):
+def get_result_tags_ids(cursor, result_id):
 
     """
     Input:  cursor: connection to database
-            groups: list of string
+            result_id: id of the result in the db
 
-    Output: list of ID of each tag from database
+    Output: return IDs of every tags linked to the result
     """
 
+    sqlite_get_tags_ids_query = (
+        "SELECT tag_id FROM link_results_tags WHERE result_id = ?;"
+    )
+
+    tags_ids = run_sql_command(cursor, sqlite_get_tags_ids_query, [result_id])
+
+    if tags_ids is not None and len(tags_ids) > 0:
+        output_list = []
+        for tag_id in tags_ids:
+            output_list.append(tag_id[0])
+        return output_list
+    else:
+        return None
+
+
+def add_new_tag_result_link(cursor, result_id, tag):
+
+    tag_id = get_tag_id(cursor, tag)
+
+    if tag_id is None:
+        tag_id = add_new_tag(cursor, tag)
+
+    sql_check_add_tag_result_exist_query = (
+        "SELECT result_id FROM link_results_tags WHERE result_id = ? AND tag_id = ?;"
+    )
+
+    link_id = run_sql_command(
+        cursor, sql_check_add_tag_result_exist_query, (result_id, tag_id)
+    )
+
+    if link_id is not None and len(link_id) > 0:
+        return
+
+    sql_add_tag_result_link_query = (
+        "INSERT INTO link_results_tags(result_id, tag_id) VALUES(?, ?);"
+    )
+
+    run_sql_command(cursor, sql_add_tag_result_link_query, (result_id, tag_id))
+
+
+def add_new_group(cursor, group):
+
+    """
+    Add a new group to the table result_group
+
+    Input:  cursor: connection to database
+            group: object of type main.group
+
+    Output: return newly created group's id
+    """
+
+    sqlite_add_group_query = (
+        "INSERT INTO result_group(name, description) VALUES (?, ?);"
+    )
+
+    run_sql_command(cursor, sqlite_add_group_query, [group.name, group.description])
+    return get_group_id(cursor, group)
+
+
+def get_group_id(cursor, group):
+
+    """
+    Input:  cursor: connection to database
+            group: object of type main.group
+
+    Output: return db ID of the group in input
+            return None if group not found
+    """
+
+    if group.description is not None:
+        sqlite_get_group_id_query = (
+            "SELECT id FROM result_group WHERE name = ? and description = ?;"
+        )
+    else:
+        sqlite_get_group_id_query = (
+            "SELECT id FROM result_group WHERE name = ? and description IS ?;"
+        )
+
+    group_id = run_sql_command(
+        cursor, sqlite_get_group_id_query, [group.name, group.description]
+    )
+
+    if group_id is not None and len(group_id) > 0:
+        return group_id[0][0]
     return None
+
+
+def get_result_groups_ids(cursor, result_id):
+
+    """
+    Input:  cursor: connection to database
+            result_id: id of the result in the db
+
+    Output: return IDs of every groups linked to the result
+    """
+
+    sqlite_get_groups_ids_query = (
+        "SELECT group_id FROM link_results_groups WHERE result_id = ?;"
+    )
+
+    groups_ids = run_sql_command(cursor, sqlite_get_groups_ids_query, [result_id])
+
+    if groups_ids is not None and len(groups_ids) > 0:
+        output_list = []
+        for group_id in groups_ids:
+            output_list.append(group_id[0])
+        return output_list
+    else:
+        return None
+
+
+def add_new_group_result_link(cursor, result_id, group):
+
+    group_id = get_group_id(cursor, group)
+
+    if group_id is None:
+        group_id = add_new_group(cursor, group)
+
+    sql_check_add_group_result_exist_query = "SELECT result_id FROM link_results_groups WHERE result_id = ? AND group_id = ?;"
+
+    link_id = run_sql_command(
+        cursor, sql_check_add_group_result_exist_query, (result_id, group_id)
+    )
+
+    if link_id is not None and len(link_id) > 0:
+        return
+
+    sql_add_group_result_link_query = (
+        "INSERT INTO link_results_groups(result_id, group_id) VALUES(?, ?);"
+    )
+
+    run_sql_command(cursor, sql_add_group_result_link_query, (result_id, group_id))
 
 
 def build_query_data(result):
@@ -125,7 +281,7 @@ def add_new_result_to_DB(cursor, result):
     Input:  cursor: connection to database
             result: object of type main.Result
 
-    Output: ID of the newly created result
+    Output: return newly created result's id
     """
 
     attribute_query = "(" + ", ".join(attributes) + ")"
@@ -136,38 +292,80 @@ def add_new_result_to_DB(cursor, result):
 
     data = build_query_data(result)
 
-    record = run_sql_command(cursor, sqlite_add_result_to_db_query, data)
+    run_sql_command(cursor, sqlite_add_result_to_db_query, data)
 
-    print(record)
+    result_id = get_result_ID(cursor, result, True)
 
-    return record
+    if result.tags is not None:
+        for tag in result.tags:
+            add_new_tag_result_link(cursor, result_id, tag)
+
+    if result.groups is not None:
+        for group in result.groups:
+            add_new_group_result_link(cursor, result_id, group)
+
+    return result_id
 
 
-def get_result_ID(cursor, result):
+def get_result_ID(cursor, result, ignore_tag_and_groups=False):
 
     """
     Input:  cursor: connection to database
             result: object of type main.Result
+            ignore_tag_and_groups: wether or not to check for tags and groups identicality
     
-    Output: ID of the result if it exist in the database, or create a new entry and return the new ID
+    Output: ID of the result if it exist in the database
+            return None if result not found
     """
 
     sqlite_get_result_ID_query = (
         "SELECT id FROM result WHERE" + build_query_where(result) + ";"
     )
 
-    record = run_sql_command(cursor, sqlite_get_result_ID_query, None)
+    result_ids = run_sql_command(cursor, sqlite_get_result_ID_query, None)
 
-    test = sqlite_get_result_ID_query
+    if result_ids is not None and len(result_ids) > 0:
 
-    if record != None and len(record) > 0:
-        return record[0][0]
+        if ignore_tag_and_groups:
 
-    add_new_result_to_DB(cursor, result)
+            return result_ids[len(result_ids) - 1][0]
 
-    data = build_query_data(result)
+        else:
 
-    return run_sql_command(cursor, sqlite_get_result_ID_query, data)
+            for r_ids in result_ids:
+
+                result_id = r_ids[0]
+
+                result_tag_ids = get_result_tags_ids(cursor, result_id)
+                if result_tag_ids is not None:
+                    result_tag_ids = sorted(result_tag_ids)
+
+                result_group_ids = get_result_groups_ids(cursor, result_id)
+                if result_group_ids is not None:
+                    result_group_ids = sorted(result_group_ids)
+
+                if result.tags is not None:
+                    tag_ids = [get_tag_id(cursor, tag) for tag in result.tags]
+                    if None in tag_ids:
+                        return None
+                    else:
+                        tag_ids = sorted(tag_ids)
+                else:
+                    tag_ids = None
+
+                if result.groups is not None:
+                    group_ids = [get_group_id(cursor, group) for group in result.groups]
+                    if None in group_ids:
+                        return None
+                    else:
+                        group_ids = sorted(group_ids)
+                else:
+                    group_ids = None
+
+                if tag_ids == result_tag_ids and group_ids == result_group_ids:
+                    return result_id
+
+    return None
 
 
 # Function: Add a new search entry in the database
@@ -212,7 +410,11 @@ def add_proposed_result(
 
             result_id = get_result_ID(cursor, result)
 
-            if result_id is not None:
+            if result_id is None:
+
+                result_id = add_new_result_to_DB(cursor, result)
+
+            else:
 
                 check_reranking_entry_exist_already = "SELECT id from search_reranking_feedback WHERE search_id = ? AND result_id = ?;"
 
@@ -249,8 +451,15 @@ def add_proposed_result(
         print("-ADD_FEEDBACK_RESULT\nError while connecting to sqlite", error, "\n")
 
 
-# Function: Update the proposed result feedback in the database
 def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
+
+    """
+    Update the feedback in search_reranking_feedback table
+
+    Input:  conversation_id: id of the conversation where the search was done
+            search: search entered by the user
+            feedbacks_list: list of feedback of type (result, feedback) by the user who made that search      
+    """
 
     try:
 
@@ -267,7 +476,11 @@ def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
 
                 result_id = get_result_ID(cursor, fback.result)
 
-                if result_id is not None:
+                if result_id is None:
+
+                    result_id = add_new_result_to_DB(cursor, fback.result)
+
+                else:
 
                     sqlite_update_result_query = "UPDATE search_reranking_feedback SET feedback = ? WHERE search_id = ? AND result_id = ?"
 
@@ -289,6 +502,13 @@ def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
 # Return the search_id corresponding to these parameters
 def get_search_id_from_conv_id_and_search(cursor, conversation_id, user_search):
 
+    """
+    Input:  conversation_id: id of the conversation the search was done
+            user_search: search entered by the user
+
+    Output: search_id corresponding to the couple (conversation_id, user_search)        
+    """
+
     try:
 
         sqlite_get_search_id_query = "SELECT id FROM search where conversation_id = ? and user_search = ? ORDER BY id DESC;"
@@ -307,6 +527,12 @@ def get_search_id_from_conv_id_and_search(cursor, conversation_id, user_search):
 
 
 def get_search_ids_from_search(cursor, user_search):
+
+    """
+    Input:  user_search: search entered by the users
+
+    Output: List of search_id corresponding to the string user_search by different users 
+    """
 
     try:
 
@@ -330,6 +556,13 @@ def get_search_ids_from_search(cursor, user_search):
 
 def get_feedback_for_reranking(user_search, result):
 
+    """
+    Input:  user_search: search entered by the user
+            result: object of type main.Result
+
+    Output: List of feedbacks corresponding to the couple (user_search, result)        
+    """
+
     try:
 
         sqliteConnection = sqlite3.connect(database)
@@ -337,11 +570,12 @@ def get_feedback_for_reranking(user_search, result):
 
         search_ids = get_search_ids_from_search(cursor, user_search)
 
-        print("search_ids", search_ids)
-
         if search_ids != None and len(search_ids) > 0:
 
             result_id = get_result_ID(cursor, result)
+
+            if result_id is None:
+                return []
 
             sqlite_get_feedback_query = "SELECT feedback FROM search_reranking_feedback where search_id IN ({}) and result_id = ?;".format(
                 ", ".join(["?"] * len(search_ids))
