@@ -3,7 +3,7 @@ import numpy as np
 from enum import Enum
 from pathlib import Path
 
-import sqlQuery
+import sql_query
 
 data_path = Path("data")
 
@@ -46,7 +46,7 @@ def compute_feedback_score(conversation_id, user_search, result):
 
     # get feedback for that particular search_id -> result_url sequence (TODO: check for similar search?)
 
-    feedbacks = sqlQuery.get_feedback_for_reranking(user_search, result)
+    feedbacks = sql_query.get_feedback_for_reranking(user_search, result)
 
     if feedbacks != None and len(feedbacks) > 0:
         # Normalize mean of all feedbacks (-1->1 to 0->1)
@@ -103,7 +103,7 @@ def add_reranking_to_db(
 
                 old_rank = j
 
-        sqlQuery.add_proposed_result(
+        sql_query.add_proposed_result(
             conversation_id=conversation_id,
             search=user_search,
             result=result,
