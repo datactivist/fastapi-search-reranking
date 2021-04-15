@@ -17,6 +17,7 @@ class Add_Search_Query(BaseModel):
 
     conversation_id: str
     user_search: str
+    portail: str
     date: str
 
     class Config:
@@ -46,6 +47,7 @@ class Result(BaseModel):
     title: str
     url: str
     description: str
+    portail: str
     owner_org: Optional[str]
     owner_org_description: Optional[str]
     maintainer: Optional[str]
@@ -80,6 +82,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
                             "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
                             "description": "Description 1",
+                            "portail": "datasud",
                         },
                         "feedback": 1,
                     },
@@ -88,6 +91,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
                             "url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
                             "description": "Description 2",
+                            "portail": "datasud",
                         },
                         "feedback": -1,
                     },
@@ -96,6 +100,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
                             "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
                             "description": "Description 3",
+                            "portail": "datasud",
                         },
                         "feedback": -1,
                     },
@@ -104,6 +109,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
                             "url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
                             "description": "Description 4",
+                            "portail": "datasud",
                         },
                         "feedback": 1,
                     },
@@ -148,6 +154,7 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
                                 "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
                                 "description": "Description 1",
+                                "portail": "datasud",
                                 "tags": ["tag1", "tag2", "tag3"],
                                 "groups": [
                                     {
@@ -164,17 +171,20 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
                                 "url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
                                 "description": "Description 2",
+                                "portail": "datasud",
                             },
                             {
                                 "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
                                 "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
                                 "description": "Description 3",
+                                "portail": "datasud",
                                 "tags": ["tag1", "tag3", "tag4"],
                             },
                             {
                                 "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
                                 "url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
                                 "description": "Description 4",
+                                "portail": "datasud",
                             },
                         ],
                     }
@@ -199,10 +209,11 @@ async def manage_query_reranking(query: Search_Reranking_Query):
     - **user_search**: search of the user
     - **data**: list of results_list
     - A **result list** is comprised of the API hostname from which the results have been gathered, and the list of results
-    - A **result** has 3 required attributes:
+    - A **result** has 4 required attributes:
         - **title**: title of the result
         - **url**: url of the result
         - **description**: description of the result
+        - **portail**: data portal hosting it
     - A **result** can have these optional attributes, defaulted to empty:
         - **owner_org**: organization that created the datased
         - **owner_org_description**: a description of that organization
@@ -240,11 +251,12 @@ async def add_search(search: Add_Search_Query):
     ### Required
     - **conversation_id**: Rasa ID of the conversation
     - **user_search**: search terms entered by the user
+    - **portail**: data portal where the search is done
     - **date**: date of the search [yy-mm-dd hh:mm:ss]
     """
 
     sql_query.add_new_search_query(
-        search.conversation_id, search.user_search, search.date
+        search.conversation_id, search.user_search, search.portail, search.date
     )
 
 
@@ -259,10 +271,11 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
     - **feedbacks_list**: List of results_feedback
     - A **results_feedback** has two attributes:
         - **feedback**: Feedback of the user with value -1, 0, or 1
-        - A **result** with 3 required attributes:
+        - A **result** has 4 required attributes:
             - **title**: title of the result
             - **url**: url of the result
             - **description**: description of the result
+            - **portail**: data portal hosting it
         - A **result** can have these optional attributes, defaulted to empty:
             - **owner_org**: organization that created the datased
             - **owner_org_description**: a description of that organization

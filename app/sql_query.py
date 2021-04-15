@@ -9,6 +9,7 @@ attributes = [
     "title",
     "url",
     "description",
+    "portail",
     "owner_org",
     "owner_org_description",
     "maintainer",
@@ -53,7 +54,7 @@ def run_sql_command(cursor, sql_command, data):
         return None
 
 
-def add_new_tag(cursor, tag):
+def add_new_tag(cursor, tag, portail):
 
     """
     Add a new tag to the table result_tag
@@ -64,13 +65,13 @@ def add_new_tag(cursor, tag):
     Output: return newly created tag's id
     """
 
-    sqlite_add_tag_query = "INSERT INTO result_tag(name) VALUES (?);"
+    sqlite_add_tag_query = "INSERT INTO result_tag(name, portail) VALUES (?, ?);"
 
-    run_sql_command(cursor, sqlite_add_tag_query, [tag])
-    return get_tag_id(cursor, tag)
+    run_sql_command(cursor, sqlite_add_tag_query, (tag, portail))
+    return get_tag_id(cursor, tag, portail)
 
 
-def get_tag_id(cursor, tag):
+def get_tag_id(cursor, tag, portail=None):
 
     """
     Input:  cursor: connection to database
@@ -80,9 +81,14 @@ def get_tag_id(cursor, tag):
             return None if tag not found
     """
 
-    sqlite_get_tag_id_query = "SELECT id FROM result_tag WHERE name = ?;"
-
-    tag_id = run_sql_command(cursor, sqlite_get_tag_id_query, [tag])
+    if portail is not None:
+        sqlite_get_tag_id_query = (
+            "SELECT id FROM result_tag WHERE name = ? and portail = ?;"
+        )
+        tag_id = run_sql_command(cursor, sqlite_get_tag_id_query, [tag, portail])
+    else:
+        sqlite_get_tag_id_query = "SELECT id FROM result_tag WHERE name = ?;"
+        tag_id = run_sql_command(cursor, sqlite_get_tag_id_query, [tag])
 
     if tag_id is not None and len(tag_id) > 0:
         return tag_id[0][0]
@@ -113,12 +119,12 @@ def get_result_tags_ids(cursor, result_id):
         return None
 
 
-def add_new_tag_result_link(cursor, result_id, tag):
+def add_new_tag_result_link(cursor, result_id, tag, portail):
 
-    tag_id = get_tag_id(cursor, tag)
+    tag_id = get_tag_id(cursor, tag, portail)
 
     if tag_id is None:
-        tag_id = add_new_tag(cursor, tag)
+        tag_id = add_new_tag(cursor, tag, portail)
 
     sql_check_add_tag_result_exist_query = (
         "SELECT result_id FROM link_results_tags WHERE result_id = ? AND tag_id = ?;"
@@ -138,7 +144,7 @@ def add_new_tag_result_link(cursor, result_id, tag):
     run_sql_command(cursor, sql_add_tag_result_link_query, (result_id, tag_id))
 
 
-def add_new_group(cursor, group):
+def add_new_group(cursor, group, portail):
 
     """
     Add a new group to the table result_group
@@ -150,14 +156,16 @@ def add_new_group(cursor, group):
     """
 
     sqlite_add_group_query = (
-        "INSERT INTO result_group(name, description) VALUES (?, ?);"
+        "INSERT INTO result_group(name, description, portail) VALUES (?, ?, ?);"
     )
 
-    run_sql_command(cursor, sqlite_add_group_query, [group.name, group.description])
-    return get_group_id(cursor, group)
+    run_sql_command(
+        cursor, sqlite_add_group_query, [group.name, group.description, portail]
+    )
+    return get_group_id(cursor, group, portail)
 
 
-def get_group_id(cursor, group):
+def get_group_id(cursor, group, portail=None):
 
     """
     Input:  cursor: connection to database
@@ -169,16 +177,23 @@ def get_group_id(cursor, group):
 
     if group.description is not None:
         sqlite_get_group_id_query = (
-            "SELECT id FROM result_group WHERE name = ? and description = ?;"
+            "SELECT id FROM result_group WHERE name = ? and description = ?"
         )
     else:
         sqlite_get_group_id_query = (
-            "SELECT id FROM result_group WHERE name = ? and description IS ?;"
+            "SELECT id FROM result_group WHERE name = ? and description IS ?"
         )
 
-    group_id = run_sql_command(
-        cursor, sqlite_get_group_id_query, [group.name, group.description]
-    )
+    if portail is not None:
+        sqlite_get_group_id_query += " and portail = ?;"
+        group_id = run_sql_command(
+            cursor, sqlite_get_group_id_query, [group.name, group.description, portail]
+        )
+    else:
+        sqlite_get_group_id_query += ";"
+        group_id = run_sql_command(
+            cursor, sqlite_get_group_id_query, [group.name, group.description]
+        )
 
     if group_id is not None and len(group_id) > 0:
         return group_id[0][0]
@@ -209,12 +224,12 @@ def get_result_groups_ids(cursor, result_id):
         return None
 
 
-def add_new_group_result_link(cursor, result_id, group):
+def add_new_group_result_link(cursor, result_id, group, portail):
 
-    group_id = get_group_id(cursor, group)
+    group_id = get_group_id(cursor, group, portail)
 
     if group_id is None:
-        group_id = add_new_group(cursor, group)
+        group_id = add_new_group(cursor, group, portail)
 
     sql_check_add_group_result_exist_query = "SELECT result_id FROM link_results_groups WHERE result_id = ? AND group_id = ?;"
 
@@ -250,7 +265,7 @@ def build_query_data(result):
     return params
 
 
-def build_query_where(result):
+def build_query_where(result, ignore_portail=False):
 
     """
     Input:  result: object of type main.result
@@ -259,10 +274,11 @@ def build_query_where(result):
     """
 
     str_query = ""
+    ignored_attributes = ["tags", "groups", "portail"]
 
     for attribute in result:
         # tags and groups are not checked
-        if attribute[0] != "tags" and attribute[0] != "groups":
+        if attribute[0] not in ignored_attributes:
             if attribute[1] == None:
                 str_query += " " + attribute[0] + " IS NULL AND"
             elif type(attribute[1]) == str:
@@ -270,7 +286,10 @@ def build_query_where(result):
             else:
                 str_query += " " + attribute[0] + " = " + attribute[1] + " AND"
 
-    return str_query[: len(str_query) - 4]
+    if ignore_portail:
+        return str_query[: len(str_query) - 4] + ";"
+    else:
+        return str_query + ' portail = "' + result.portail + '"'
 
 
 def add_new_result_to_DB(cursor, result):
@@ -298,11 +317,11 @@ def add_new_result_to_DB(cursor, result):
 
     if result.tags is not None:
         for tag in result.tags:
-            add_new_tag_result_link(cursor, result_id, tag)
+            add_new_tag_result_link(cursor, result_id, tag, result.portail)
 
     if result.groups is not None:
         for group in result.groups:
-            add_new_group_result_link(cursor, result_id, group)
+            add_new_group_result_link(cursor, result_id, group, result.portail)
 
     return result_id
 
@@ -312,7 +331,8 @@ def get_result_ID(cursor, result, ignore_tag_and_groups=False):
     """
     Input:  cursor: connection to database
             result: object of type main.Result
-            ignore_tag_and_groups: wether or not to check for tags and groups identicality
+            ignore_tag_and_groups: wether or not to ignore tags and groups attributes
+            ignore_portail: wether or not to ignore the portail attribute
     
     Output: ID of the result if it exist in the database
             return None if result not found
@@ -345,7 +365,9 @@ def get_result_ID(cursor, result, ignore_tag_and_groups=False):
                     result_group_ids = sorted(result_group_ids)
 
                 if result.tags is not None:
-                    tag_ids = [get_tag_id(cursor, tag) for tag in result.tags]
+                    tag_ids = [
+                        get_tag_id(cursor, tag, result.portail) for tag in result.tags
+                    ]
                     if None in tag_ids:
                         return None
                     else:
@@ -354,7 +376,10 @@ def get_result_ID(cursor, result, ignore_tag_and_groups=False):
                     tag_ids = None
 
                 if result.groups is not None:
-                    group_ids = [get_group_id(cursor, group) for group in result.groups]
+                    group_ids = [
+                        get_group_id(cursor, group, result.portail)
+                        for group in result.groups
+                    ]
                     if None in group_ids:
                         return None
                     else:
@@ -369,18 +394,18 @@ def get_result_ID(cursor, result, ignore_tag_and_groups=False):
 
 
 # Function: Add a new search entry in the database
-def add_new_search_query(conversation_id, user_search, date):
+def add_new_search_query(conversation_id, user_search, portail, date):
 
     try:
 
         sqliteConnection = sqlite3.connect(database)
         cursor = sqliteConnection.cursor()
 
-        sqlite_insert_search_query = (
-            "INSERT INTO search(conversation_id, user_search, date) VALUES(?, ?, ?);"
-        )
+        sqlite_insert_search_query = "INSERT INTO search(conversation_id, user_search, portail, date) VALUES(?, ?, ?, ?);"
         run_sql_command(
-            cursor, sqlite_insert_search_query, (conversation_id, user_search, date),
+            cursor,
+            sqlite_insert_search_query,
+            (conversation_id, user_search, portail, date),
         )
 
         sqliteConnection.commit()
@@ -499,23 +524,32 @@ def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
         print("-ADD_FEEDBACK_RESULT\nError while connecting to sqlite", error, "\n")
 
 
-# Return the search_id corresponding to these parameters
-def get_search_id_from_conv_id_and_search(cursor, conversation_id, user_search):
+def get_search_id_from_conv_id_and_search(
+    cursor, conversation_id, user_search, portail=None
+):
 
     """
     Input:  conversation_id: id of the conversation the search was done
             user_search: search entered by the user
+            portail: if you want to use a particular portail
 
     Output: search_id corresponding to the couple (conversation_id, user_search)        
     """
 
     try:
 
-        sqlite_get_search_id_query = "SELECT id FROM search where conversation_id = ? and user_search = ? ORDER BY id DESC;"
-
-        record = run_sql_command(
-            cursor, sqlite_get_search_id_query, (conversation_id, user_search)
-        )
+        if portail == None:
+            sqlite_get_search_id_query = "SELECT id FROM search where conversation_id = ? and user_search = ? ORDER BY id DESC;"
+            record = run_sql_command(
+                cursor, sqlite_get_search_id_query, (conversation_id, user_search)
+            )
+        else:
+            sqlite_get_search_id_query = "SELECT id FROM search where conversation_id = ? and user_search = ? and portail = ? ORDER BY id DESC;"
+            record = run_sql_command(
+                cursor,
+                sqlite_get_search_id_query,
+                (conversation_id, user_search, portail),
+            )
 
         if record != None and len(record) > 0:
             return record[0][0]
@@ -526,21 +560,28 @@ def get_search_id_from_conv_id_and_search(cursor, conversation_id, user_search):
         print("-GET_SEARCH_ID-\nError while connecting to sqlite", error, "\n")
 
 
-def get_search_ids_from_search(cursor, user_search):
+def get_search_ids_from_search(cursor, user_search, portail=None):
 
     """
     Input:  user_search: search entered by the users
+            portail: if you want to use a particular portail
 
     Output: List of search_id corresponding to the string user_search by different users 
     """
 
     try:
 
-        sqlite_get_search_id_query = (
-            "SELECT id FROM search where user_search = ? ORDER BY id DESC;"
-        )
+        if portail == None:
+            sqlite_get_search_id_query = (
+                "SELECT id FROM search where user_search = ? ORDER BY id DESC;"
+            )
+            record = run_sql_command(cursor, sqlite_get_search_id_query, [user_search])
 
-        record = run_sql_command(cursor, sqlite_get_search_id_query, [user_search])
+        else:
+            sqlite_get_search_id_query = "SELECT id FROM search where user_search = ? and portail = ? ORDER BY id DESC;"
+            record = run_sql_command(
+                cursor, sqlite_get_search_id_query, (user_search, portail)
+            )
 
         if record != None and len(record) > 0:
             search_ids = []
@@ -554,7 +595,7 @@ def get_search_ids_from_search(cursor, user_search):
         print("-GET_SEARCH_ID-\nError while connecting to sqlite", error, "\n")
 
 
-def get_feedback_for_reranking(user_search, result):
+def get_feedback_for_reranking(user_search, result, portail=None):
 
     """
     Input:  user_search: search entered by the user
@@ -568,7 +609,7 @@ def get_feedback_for_reranking(user_search, result):
         sqliteConnection = sqlite3.connect(database)
         cursor = sqliteConnection.cursor()
 
-        search_ids = get_search_ids_from_search(cursor, user_search)
+        search_ids = get_search_ids_from_search(cursor, user_search, portail)
 
         if search_ids != None and len(search_ids) > 0:
 
