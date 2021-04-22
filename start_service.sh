@@ -44,12 +44,12 @@ done
 start_docker()
 {
     if $flag_start_docker; then
-        sudo docker stop $docker_name
-        sudo docker rm $docker_name
+        sudo docker stop $reranking_docker_name
+        sudo docker rm $reranking_docker_name
         if $flag_silence_docker; then
-            sudo docker run -d --name $docker_name -h $API_host_name -p $API_port:80 $docker_name:$docker_version
+            sudo docker run -d --name $reranking_docker_name -h $API_host_name -p $API_port:80 $reranking_docker_name:$reranking_docker_version
         else
-            sudo docker run --name $docker_name -h $API_host_name -p $API_port:80 $docker_name:$docker_version
+            sudo docker run --name $reranking_docker_name -h $API_host_name -p $API_port:80 $reranking_docker_name:$reranking_docker_version
         fi
     else
         echo "Not starting docker"
@@ -72,7 +72,7 @@ start_local_mode()
 if [ $deployment_method == "local" ]; then
     start_local_mode
 elif [ $deployment_method == "docker" ]; then
-    sudo docker build -t $docker_name:$docker_version .
+    sudo docker build -t $reranking_docker_name:$reranking_docker_version .
     start_docker
 else
     echo "'$deployment_method' is not a valid value for deployment_method in config.config"
