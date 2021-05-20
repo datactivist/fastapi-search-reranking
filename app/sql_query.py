@@ -1,8 +1,6 @@
 import sqlite3
 import numpy as np
 
-# TODO Tags / Groups
-
 database = "data/user_reranking_feedback.db"
 
 attributes = [
@@ -93,6 +91,47 @@ def get_tag_id(cursor, tag, portail=None):
     if tag_id is not None and len(tag_id) > 0:
         return tag_id[0][0]
     return None
+
+
+def get_tag_name(cursor, tag_id):
+
+    """
+    Input:  cursor: connection to database
+            tag_id: int
+
+    Output: return tag name of the id in input
+            return None if tag not found
+    """
+
+    sqlite_get_tag_name_query = "SELECT name FROM result_tag WHERE id = ?;"
+    tag_name = run_sql_command(cursor, sqlite_get_tag_name_query, [tag_id])
+
+    if tag_name is not None and len(tag_name) > 0:
+        return tag_name[0][0]
+    return None
+
+
+def get_result_tags_list(cursor, result_id):
+
+    """
+    Input:  
+        cursor: connection to database
+        result_id: int
+
+    Output: 
+        return list of tag name linked to the result in input
+        return None if the result has no tags linked
+    """
+
+    slite_get_tags_link_list = (
+        "SELECT * from link_results_tags WHERE result_id = " + str(result_id)
+    )
+    tags_link_list = run_sql_command(cursor, slite_get_tags_link_list, None)
+    return (
+        [get_tag_name(cursor, tag_link[1]) for tag_link in tags_link_list]
+        if tags_link_list is not None
+        else None
+    )
 
 
 def get_result_tags_ids(cursor, result_id):
@@ -198,6 +237,49 @@ def get_group_id(cursor, group, portail=None):
     if group_id is not None and len(group_id) > 0:
         return group_id[0][0]
     return None
+
+
+def get_group_data(cursor, group_id):
+
+    """
+    Input:  cursor: connection to database
+            group_id: int
+
+    Output: return group name and description of the id in input
+            return None if group not found
+    """
+
+    sqlite_get_group_data_query = (
+        "SELECT name, description FROM result_group WHERE id = ?;"
+    )
+    group_data = run_sql_command(cursor, sqlite_get_group_data_query, [group_id])
+
+    if group_data is not None and len(group_data) > 0:
+        return group_data[0]
+    return None
+
+
+def get_result_groups_list(cursor, result_id):
+
+    """
+    Input:  
+        cursor: connection to database
+        result_id: int
+
+    Output: 
+        return list of groups linked to the result in input
+        return None if the result has no groups linked
+    """
+
+    slite_get_groups_link_list = (
+        "SELECT * from link_results_groups WHERE result_id = " + str(result_id)
+    )
+    groups_link_list = run_sql_command(cursor, slite_get_groups_link_list, None)
+    return (
+        [get_group_data(cursor, group_link[1]) for group_link in groups_link_list]
+        if groups_link_list is not None
+        else None
+    )
 
 
 def get_result_groups_ids(cursor, result_id):
@@ -391,6 +473,41 @@ def get_result_ID(cursor, result, ignore_tag_and_groups=False):
                     return result_id
 
     return None
+
+
+def get_result_from_ID(cursor, result_id):
+
+    """
+    Input:  cursor: connection to database
+            result_id: id of the result
+    
+    Output: content of the result
+            return None if result not found
+    """
+
+    sqlite_get_result_data_query = "SELECT * from result WHERE id = " + str(result_id)
+    result = run_sql_command(cursor, sqlite_get_result_data_query, None)
+
+    return (
+        {
+            "title": result[0][1],
+            "url": result[0][2],
+            "description": result[0][3],
+            "portail": result[0][4],
+            "owner_org": result[0][5],
+            "owner_org_description": result[0][6],
+            "maintainer": result[0][7],
+            "dataset_publication_date": result[0][8],
+            "dataset_modification_date": result[0][9],
+            "metadata_creation_date": result[0][10],
+            "metadata_modification_date": result[0][11],
+            "tags": get_result_tags_list(cursor, result_id),
+            "groups": [
+                {"name": group[0], "description": group[1]}
+                for group in get_result_groups_list(cursor, result_id)
+            ],
+        },
+    )
 
 
 # Function: Add a new search entry in the database
@@ -632,3 +749,60 @@ def get_feedback_for_reranking(user_search, result, portail=None):
 
     except sqlite3.Error as error:
         print("-GET_FEEDBACK-\nError while connecting to sqlite", error, "\n")
+
+
+def copy_database_feedbacks():
+
+    """
+    Return a copy of the database content in JSON format
+    """
+
+    try:
+
+        sqliteConnection = sqlite3.connect(database)
+        cursor = sqliteConnection.cursor()
+
+        sqlite_get_search_list_query = "SELECT * FROM search"
+
+        database_copy = []
+
+        search_list = run_sql_command(cursor, sqlite_get_search_list_query, None)
+
+        for search in search_list:
+
+            sqlite_get_search_data_query = (
+                "SELECT * from search_reranking_feedback WHERE search_id = "
+                + str(search[0])
+            )
+            search_data_list = run_sql_command(
+                cursor, sqlite_get_search_data_query, None
+            )
+
+            feedbacks = []
+
+            for data in search_data_list:
+
+                feedbacks.append(
+                    {
+                        "result": get_result_from_ID(cursor, data[4])[0],
+                        "old_rank": data[2],
+                        "new_rank": data[3],
+                        "feedback": data[5],
+                        "methods_used": data[6],
+                    }
+                )
+
+            database_copy.append(
+                {
+                    "user_search": search[2],
+                    "portail": search[3],
+                    "date": search[4],
+                    "feedbacks": feedbacks,
+                }
+            )
+
+        return database_copy
+
+    except sqlite3.Error as error:
+        print("-GET_COPY-\nError while connecting to sqlite:", error, "\n")
+        return []

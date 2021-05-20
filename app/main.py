@@ -64,6 +64,15 @@ class Result_Feedback(BaseModel):
     feedback: Feedback
 
 
+class Result_Reranking_Feedback(BaseModel):
+
+    result: Result
+    old_rank: int
+    new_rank: int
+    feedback: Feedback
+    methods_used: str
+
+
 class Add_Result_Feedback_Query(BaseModel):
 
     conversation_id: str
@@ -192,8 +201,34 @@ class Search_Reranking_Query(BaseModel):
         }
 
 
+class databaseFeedbacksCopy(BaseModel):
+
+    user_search: str
+    portail: str
+    date: str
+    feedbacks: List[Result_Reranking_Feedback]
+
+    class Config:
+        schema_extra = {
+            "example": {},
+        }
+
+
 # Launch API
 app = FastAPI()
+
+
+@app.get("/copy_feedbacks", response_model=List[databaseFeedbacksCopy])
+async def copy_results_feedback():
+    """
+    ## Function
+    Copy all the database feedbacks and return it as a JSON object
+    """
+
+    data = sql_query.copy_database_feedbacks()
+    with open("test.json", "w") as outfile:
+        json.dump(data, outfile)
+    return data
 
 
 @app.post("/search_reranking", response_model=List[Result])
