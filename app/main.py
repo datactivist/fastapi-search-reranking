@@ -16,7 +16,7 @@ class Add_Search_Query(BaseModel):
 
     conversation_id: str
     user_search: str
-    portail: str
+    portal: str
     date: str
 
     class Config:
@@ -46,7 +46,7 @@ class Result(BaseModel):
     title: str
     url: str
     description: str
-    portail: str
+    portal: str
     owner_org: Optional[str]
     owner_org_description: Optional[str]
     maintainer: Optional[str]
@@ -62,6 +62,15 @@ class Result_Feedback(BaseModel):
 
     result: Result
     feedback: Feedback
+
+
+class Result_Reranking_Feedback(BaseModel):
+
+    result: Result
+    old_rank: int
+    new_rank: int
+    feedback: Feedback
+    methods_used: str
 
 
 class Add_Result_Feedback_Query(BaseModel):
@@ -81,7 +90,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
                             "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
                             "description": "Description 1",
-                            "portail": "datasud",
+                            "portal": "datasud",
                         },
                         "feedback": 1,
                     },
@@ -90,7 +99,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
                             "url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
                             "description": "Description 2",
-                            "portail": "datasud",
+                            "portal": "datasud",
                         },
                         "feedback": -1,
                     },
@@ -99,7 +108,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
                             "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
                             "description": "Description 3",
-                            "portail": "datasud",
+                            "portal": "datasud",
                         },
                         "feedback": -1,
                     },
@@ -108,7 +117,7 @@ class Add_Result_Feedback_Query(BaseModel):
                             "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
                             "url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
                             "description": "Description 4",
-                            "portail": "datasud",
+                            "portal": "datasud",
                         },
                         "feedback": 1,
                     },
@@ -153,7 +162,7 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Usines hydroélectriques concédées en Provence Alpes Côte d'Azur",
                                 "url": "syncb021eba-fr-120066022-jdd-627db3a0-9448-4631-81b9-2f13f67b8557",
                                 "description": "Description 1",
-                                "portail": "datasud",
+                                "portal": "datasud",
                                 "tags": ["tag1", "tag2", "tag3"],
                                 "groups": [
                                     {
@@ -170,20 +179,20 @@ class Search_Reranking_Query(BaseModel):
                                 "title": "Enveloppes Approchées d'Inondations Potentielles des cours d'eau de Provence-Alpes-Côte d'Azur",
                                 "url": "sync9c8f975-fr-120066022-jdd-fb022239-2083-4d31-9fc0-369117139336",
                                 "description": "Description 2",
-                                "portail": "datasud",
+                                "portal": "datasud",
                             },
                             {
                                 "title": "Tronçons de cours d'eau court-circuités en Provence Alpes Côte d'Azur",
                                 "url": "sync8ff00ed-fr-120066022-jdd-f8590eb7-286a-4d7f-b5f2-6246ba0c6485",
                                 "description": "Description 3",
-                                "portail": "datasud",
+                                "portal": "datasud",
                                 "tags": ["tag1", "tag3", "tag4"],
                             },
                             {
                                 "title": "Ouvrages de retenue d'eau en Provence Alpes Côte d'Azur",
                                 "url": "sync970f901-fr-120066022-jdd-58e01586-f290-42ee-940e-dbeece6a1d39",
                                 "description": "Description 4",
-                                "portail": "datasud",
+                                "portal": "datasud",
                             },
                         ],
                     }
@@ -192,8 +201,34 @@ class Search_Reranking_Query(BaseModel):
         }
 
 
+class databaseFeedbacksExctraction(BaseModel):
+
+    user_search: str
+    portal: str
+    date: str
+    feedbacks: List[Result_Reranking_Feedback]
+
+    class Config:
+        schema_extra = {
+            "example": {},
+        }
+
+
 # Launch API
 app = FastAPI()
+
+
+@app.get("/extract_all_feedbacks", response_model=List[databaseFeedbacksExctraction])
+async def extract_results_feedback():
+    """
+    ## Function
+    Extract all the database feedbacks and return it as a JSON object
+    """
+
+    data = sql_query.extract_database_feedbacks()
+    with open("test.json", "w") as outfile:
+        json.dump(data, outfile)
+    return data
 
 
 @app.post("/search_reranking", response_model=List[Result])
@@ -212,7 +247,7 @@ async def manage_query_reranking(query: Search_Reranking_Query):
         - **title**: title of the result
         - **url**: url of the result
         - **description**: description of the result
-        - **portail**: data portal hosting it
+        - **portal**: data portal hosting it
     - A **result** can have these optional attributes, defaulted to empty:
         - **owner_org**: organization that created the datased
         - **owner_org_description**: a description of that organization
@@ -250,12 +285,12 @@ async def add_search(search: Add_Search_Query):
     ### Required
     - **conversation_id**: Rasa ID of the conversation
     - **user_search**: search terms entered by the user
-    - **portail**: data portal where the search is done
+    - **portal**: data portal where the search is done
     - **date**: date of the search [yy-mm-dd hh:mm:ss]
     """
 
     sql_query.add_new_search_query(
-        search.conversation_id, search.user_search, search.portail, search.date
+        search.conversation_id, search.user_search, search.portal, search.date
     )
 
 
@@ -274,7 +309,7 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
             - **title**: title of the result
             - **url**: url of the result
             - **description**: description of the result
-            - **portail**: data portal hosting it
+            - **portal**: data portal hosting it
         - A **result** can have these optional attributes, defaulted to empty:
             - **owner_org**: organization that created the datased
             - **owner_org_description**: a description of that organization
