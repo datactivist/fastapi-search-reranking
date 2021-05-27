@@ -2,7 +2,7 @@ CREATE TABLE search (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     "conversation_id" VARCHAR(255) NOT NULL, 
 	"user_search" VARCHAR(255) NOT NULL,
-    "portail" VARCHAR (255) NOT NULL,
+    "portal" VARCHAR (255) NOT NULL,
     "date" DATETIME NOT NULL
 );
 
@@ -10,14 +10,14 @@ CREATE TABLE search (
 CREATE TABLE result_tag (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     "name" VARCHAR(255) NOT NULL,
-    "portail" VARCHAR(255) NOT NULL
+    "portal" VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE result_group (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     "name" VARCHAR(255) NOT NULL,
     "description" VARCHAR(255),
-    "portail" VARCHAR(255) NOT NULL
+    "portal" VARCHAR(255) NOT NULL
 );
 
 
@@ -26,7 +26,7 @@ CREATE TABLE result (
     "title" VARCHAR(255) NOT NULL, 
     "url" VARCHAR(255) NOT NULL,
     "description" VARCHAR(255) NOT NULL,
-    "portail" VARCHAR(255) NOT NULL,
+    "portal" VARCHAR(255) NOT NULL,
     "owner_org" VARCHAR(255),
     "owner_org_description" VARCHAR(255),
     "maintainer" VARCHAR(255),
