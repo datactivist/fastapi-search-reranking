@@ -36,26 +36,48 @@ def compute_feedback_score(conversation_id, user_search, result):
 
     """
     Compute the feedback score
-
     Input:  conversation_id: id of the conversation
             user_search: keyword entered by the user
             result: proposed result to the user
-
-    Output: Feedback score, default value to 0 if no feedbacks available
+    Output: Feedback score, default value to 0.4 if no feedbacks available
     """
 
+    # This old version take into account when a user doesn't choose a keyword, I changed it so that a keyword not chosen doesn't get as much as a penality
+    """
     # get feedback for that particular search_id -> result_url sequence (TODO: check for similar search?)
-
     feedbacks = sql_query.get_feedback_for_reranking(user_search, result)
-
     if feedbacks != None and len(feedbacks) > 0:
         # Normalize mean of all feedbacks (-1->1 to 0->1)
         feedback_score = (np.mean(feedbacks) - (-1)) / (1 - (-1))
     else:
         # Default value if no feedbacks available
         feedback_score = 0
-
     return feedback_score
+    """
+
+    # get feedback for that particular keyword1 -> keyword2 sequence (TODO: check for similar search?)
+    feedbacks = sql_query.get_feedback_for_reranking(user_search, result)
+    chosen = 0
+    ignored = 0
+    base_score = 0.4
+    if feedbacks is not None and len(feedbacks) > 0:
+        for feedback in feedbacks:
+            if feedback == 1:
+                chosen += 1
+            if feedback == -1:
+                ignored += 1
+
+        # remove a point for every 5 users that didn't choose it
+        chosen -= ignored % 5
+
+        feedback_score = base_score + (chosen / len(feedbacks))
+
+    else:
+        feedback_score = base_score
+
+    # print(result.title, ":", max(0, min(feedback_score, 1)))
+
+    return max(0, min(feedback_score, 1))
 
 
 def add_feedback_score_to_results(conversation_id, user_search, results_list):
