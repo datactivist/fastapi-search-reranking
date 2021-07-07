@@ -32,12 +32,11 @@ def remove_second_key_from_array_of_tuple(array):
     return [array[i][0] for i in range(len(array))]
 
 
-def compute_feedback_score(conversation_id, user_search, result):
+def compute_feedback_score(user_search, result):
 
     """
     Compute the feedback score
-    Input:  conversation_id: id of the conversation
-            user_search: keyword entered by the user
+    Input:  user_search: keyword entered by the user
             result: proposed result to the user
     Output: Feedback score, default value to 0.4 if no feedbacks available
     """
@@ -80,13 +79,12 @@ def compute_feedback_score(conversation_id, user_search, result):
     return max(0, min(feedback_score, 1))
 
 
-def add_feedback_score_to_results(conversation_id, user_search, results_list):
+def add_feedback_score_to_results(user_search, results_list):
 
     """
     Get feedback score for each result in result_list
 
-    Input:  conversation_id: id of the conversation
-            user_search: keyword entered by the user
+    Input:  user_search: keyword entered by the user
             results_list: list of proposed result to the user
 
     Output: list of type ((result_url, result_title), feedback_score)
@@ -96,7 +94,7 @@ def add_feedback_score_to_results(conversation_id, user_search, results_list):
 
     for result in results_list:
 
-        feedback_score = compute_feedback_score(conversation_id, user_search, result)
+        feedback_score = compute_feedback_score(user_search, result)
 
         print(feedback_score, result.title)
 
@@ -154,7 +152,7 @@ def rerank_results(conversation_id, user_search, data, use_feedback, use_metadat
             ):  # TODO Gérer plusieurs listes de résultats en entrée
 
                 feedback_data = add_feedback_score_to_results(
-                    conversation_id, user_search, result_list.results_list
+                    user_search, result_list.results_list
                 )
                 feedback_data = sort_array_of_tuple_with_second_value(feedback_data)
                 feedback_data = remove_second_key_from_array_of_tuple(feedback_data)
