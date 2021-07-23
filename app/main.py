@@ -226,8 +226,6 @@ async def extract_results_feedback():
     """
 
     data = sql_query.extract_database_feedbacks()
-    with open("test.json", "w") as outfile:
-        json.dump(data, outfile)
     return data
 
 

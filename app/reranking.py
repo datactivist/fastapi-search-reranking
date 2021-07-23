@@ -66,8 +66,8 @@ def compute_feedback_score(user_search, result):
             if feedback == -1:
                 ignored += 1
 
-        # remove a point for every 5 users that didn't choose it
-        chosen -= ignored % 5
+        # remove a point for every 10 users that didn't choose it
+        chosen -= int(ignored / 10)
 
         feedback_score = base_score + (chosen / len(feedbacks))
 
