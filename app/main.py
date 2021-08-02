@@ -205,6 +205,7 @@ class Search_Reranking_Query(BaseModel):
 class databaseFeedbacksExctraction(BaseModel):
 
     user_search: str
+    search_target: str
     portal: str
     date: str
     feedbacks: List[Result_Reranking_Feedback]

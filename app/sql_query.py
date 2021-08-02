@@ -1,5 +1,4 @@
 import sqlite3
-import numpy as np
 
 database = "data/user_reranking_feedback.db"
 
@@ -553,36 +552,26 @@ def add_proposed_result(
             result_id = get_result_ID(cursor, result)
 
             if result_id is None:
-
                 result_id = add_new_result_to_DB(cursor, result)
+
+            check_reranking_entry_exist_already = "SELECT id from search_reranking_feedback WHERE search_id = ? AND result_id = ?;"
+
+            record = run_sql_command(
+                cursor, check_reranking_entry_exist_already, (search_id, result_id)
+            )
+
+            if record is not None and len(record) > 0:
+                return
 
             else:
 
-                check_reranking_entry_exist_already = "SELECT id from search_reranking_feedback WHERE search_id = ? AND result_id = ?;"
+                sqlite_insert_result_feedback_query = "INSERT INTO search_reranking_feedback(search_id, old_rank, new_rank, result_id, feedback, methods_used) VALUES(?, ?, ?, ?, ?, ?);"
 
-                record = run_sql_command(
-                    cursor, check_reranking_entry_exist_already, (search_id, result_id)
+                run_sql_command(
+                    cursor,
+                    sqlite_insert_result_feedback_query,
+                    (search_id, old_rank, new_rank, result_id, feedback, methods_used,),
                 )
-
-                if record is not None and len(record) > 0:
-                    return
-
-                else:
-
-                    sqlite_insert_result_feedback_query = "INSERT INTO search_reranking_feedback(search_id, old_rank, new_rank, result_id, feedback, methods_used) VALUES(?, ?, ?, ?, ?, ?);"
-
-                    run_sql_command(
-                        cursor,
-                        sqlite_insert_result_feedback_query,
-                        (
-                            search_id,
-                            old_rank,
-                            new_rank,
-                            result_id,
-                            feedback,
-                            methods_used,
-                        ),
-                    )
 
             sqliteConnection.commit()
 
@@ -782,7 +771,7 @@ def extract_database_feedbacks():
         sqliteConnection = sqlite3.connect(database)
         cursor = sqliteConnection.cursor()
 
-        sqlite_get_search_list_query = "SELECT * FROM search"
+        sqlite_get_search_list_query = "SELECT * FROM search"  # Get every search info
 
         database_copy = []
 
@@ -791,7 +780,7 @@ def extract_database_feedbacks():
         for search in search_list:
 
             sqlite_get_search_data_query = (
-                "SELECT * from search_reranking_feedback WHERE search_id = "
+                "SELECT * from search_reranking_feedback WHERE search_id = "  # For every search, get every feedback
                 + str(search[0])
             )
             search_data_list = run_sql_command(
@@ -802,7 +791,7 @@ def extract_database_feedbacks():
 
             for data in search_data_list:
 
-                feedbacks.append(
+                feedbacks.append(  # For every feedback, add them to the list
                     {
                         "result": get_result_from_ID(cursor, data[4])[0],
                         "old_rank": data[2],
@@ -812,15 +801,31 @@ def extract_database_feedbacks():
                     }
                 )
 
-            database_copy.append(
+            sqlite_get_search_target_query = (
+                "SELECT search_target from search_target_feedback WHERE search_id = "  # For every search, get the search target entered by the user
+                + str(search[0])
+            )
+            search_target = run_sql_command(
+                cursor, sqlite_get_search_target_query, None
+            )
+
+            search_target = (
+                search_target[0][0]
+                if search_target is not None and len(search_target) > 0
+                else ""
+            )
+
+            database_copy.append(  #
                 {
                     "user_search": search[2],
+                    "search_target": search_target,
                     "portal": search[3],
                     "date": search[4],
                     "feedbacks": feedbacks,
                 }
             )
 
+        print(database_copy)
         return database_copy
 
     except sqlite3.Error as error:
