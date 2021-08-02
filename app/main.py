@@ -77,6 +77,7 @@ class Add_Result_Feedback_Query(BaseModel):
 
     conversation_id: str
     user_search: str
+    search_target: str
     feedbacks_list: List[Result_Feedback]
 
     class Config:
@@ -301,6 +302,7 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
     ### Required
     - **user_search**: Search of the user
     - **feedbacks_list**: List of results_feedback
+    - **search_target**: The description of the target entered by the user
     - A **results_feedback** has two attributes:
         - **feedback**: Feedback of the user with value -1, 0, or 1
         - A **result** has 4 required attributes:
@@ -322,6 +324,9 @@ async def add_results_feedback(feedbacks: Add_Result_Feedback_Query):
     """
 
     sql_query.update_proposed_result_feedback(
-        feedbacks.conversation_id, feedbacks.user_search, feedbacks.feedbacks_list
+        feedbacks.conversation_id,
+        feedbacks.user_search,
+        feedbacks.search_target,
+        feedbacks.feedbacks_list,
     )
 

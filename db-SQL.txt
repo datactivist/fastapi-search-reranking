@@ -6,6 +6,13 @@ CREATE TABLE search (
     "date" DATETIME NOT NULL
 );
 
+CREATE TABLE search_target_feedback (
+    "search_id" INTEGER NOT NULL,
+    "search_target" VARCHAR(255) NOT NULL,
+    FOREIGN KEY ("search_id")
+        REFERENCES search ("id"),
+    PRIMARY KEY (search_id, search_target)
+);
 
 CREATE TABLE result_tag (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,

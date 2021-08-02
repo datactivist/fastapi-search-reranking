@@ -593,7 +593,25 @@ def add_proposed_result(
         print("-ADD_FEEDBACK_RESULT\nError while connecting to sqlite", error, "\n")
 
 
-def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
+def add_search_target_feedback(cursor, search_id, search_target):
+
+    try:
+        sqlite_add_search_target_feedback_query = (
+            "INSERT INTO search_target_feedback(search_id, search_target) VALUES(?, ?);"
+        )
+
+        run_sql_command(
+            cursor, sqlite_add_search_target_feedback_query, (search_id, search_target),
+        )
+    except sqlite3.Error as error:
+        print(
+            "-ADD_SEARCH_TARGET_RESULT\nError while connecting to sqlite", error, "\n"
+        )
+
+
+def update_proposed_result_feedback(
+    conversation_id, search, search_target, feedbacks_list
+):
 
     """
     Update the feedback in search_reranking_feedback table
@@ -611,6 +629,8 @@ def update_proposed_result_feedback(conversation_id, search, feedbacks_list):
         search_id = get_search_id_from_conv_id_and_search(
             cursor, conversation_id, search
         )
+
+        add_search_target_feedback(cursor, search_id, search_target)
 
         if search_id is not None:
 
